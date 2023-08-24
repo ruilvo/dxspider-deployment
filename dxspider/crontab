@@ -1,0 +1,47 @@
+# Check Connect (At minute 0, 5, 10, 20, 30, 40, and 50)
+
+# Uncomment to activate
+#0,5,10,20,30,40,50 * * * * start_connect('othernode-1') unless connected('othernode-1')
+
+# Not in use
+# Update stats for mrtg (At minute 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, and 55)
+#00,05,10,15,20,25,30,35,40,45,50,55 * * * * run_cmd('mrtg all')
+
+# Send announce full/local (At minute 0)
+#0 * * * * run_cmd('ann full Dxspider telnet mytelnet.xx 7300' . cldate . ' ' . ztime)
+#0 * * * * run_cmd('ann local DXspider telnet mytelnet.xx 7300 at ' . cldate . ' ' . ztime)
+
+# Skimmers (At every minute)
+#* * * * * start_connect('sk0mmr') unless connected('sk0mmr')
+#* * * * * start_connect('sk1mmr') unless connected('sk1mmr')
+
+
+# AutoUpdate USDB (At 02:00 on Monday, Wednesday, and Friday)
+0 2 * * 1,3,5 spawn("cd /tmp | wget -qN ftp://ftp.w1nr.net/usdbraw.gz & /spider/perl/create_usdb.pl usdbraw.gz")
+5 2 * * 1,3,5 run_cmd("load/usdb")
+10 2 * * 1,3,5 spawn("rm /tmp/usdbraw.gz")
+
+# AutoUpdate Keps (At 02:00 on Tuesday, Thursday, and Saturday)
+0 2 * * 2,4,6 spawn("cd /tmp | wget -qN http://www.amsat.org/amsat/ftp/keps/current/nasabare.txt & /spider/perl/convkeps.pl -p nasabare.txt &")
+5 2 * * 2,4,6 run_cmd("load/keps")
+10 2 * * 2,4,6 spawn("rm /tmp/nasabare.txt")
+
+# AutoUpdate CTY.DAT (At 03:00 on Sunday, Tuesday, and Friday)
+0 3 * * 0,2,5 spawn("cd /spider/local_data | wget -qN https://www.country-files.com/cty/cty.dat &")
+0 3 * * 0,2,5 spawn("cd /spider/local_data | wget -qN https://www.country-files.com/cty/wpxloc.dat &")
+0 3 * * 0,2,5 spawn("cd /spider/local_data | wget -qN https://www.country-files.com/cty/wpxloc.raw &")
+2 3 * * 0,2,5 spawn("cd /spider/local_data | /spider/perl/create_prefix.pl")
+3 3 * * 0,2,5 run_cmd("load/prefix")
+
+# remove old files (At 00:00 in every month from January through December)
+0 0 * 1-12 * spawn(q[find /spider/local_data/debug -type f -mtime +2 -exec rm -f {} \;])
+2 0 * 1-12 * spawn(q[find /spider/local_data/log -type f -mtime +2 -exec rm -f {} \;])
+3 0 * 1-12 * spawn(q[find /spider/local_data/spots -type f -mtime +2 -exec rm -f {} \;])
+4 0 * 1-12 * spawn(q[find /spider/local_data/wcy -type f -mtime +1 -exec rm -f {} \;])
+5 0 * 1-12 * spawn(q[find /spider/local_data/wwv -type f -mtime +1 -exec rm -f {} \;])
+
+# Blacklist. TOR & Others (At minute 30)
+30 * * * * spawn('cd /spider/local_data; wget -qN http://www.dxspider.net/download/badip.torexit')
+30 * * * * spawn('cd /spider/local_data; wget -qN http://www.dxspider.net/download/badip.torrelay')
+30 * * * * spawn('cd /spider/local_data; wget -qN http://www.dxspider.net/download/badip.global')
+31 * * * * run_cmd('load/badip')

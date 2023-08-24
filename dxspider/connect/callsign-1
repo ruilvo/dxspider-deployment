@@ -1,0 +1,5 @@
+timeout 60
+abort (Busy|Sorry|Fail)
+connect telnet xxx.xxx.xx 7300
+'login' 'mycall-1'
+client otherclustercall-1 telnet

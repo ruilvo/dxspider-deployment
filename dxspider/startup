@@ -1,0 +1,20 @@
+#
+# startup script
+#
+# set maximum no of spots allowed to 100
+#set/var $Spot::maxspots = 100
+
+# connect scripts to call at startup. Update also in crontab
+
+#set/spider othernode-1
+#connect othernode-1
+
+#Uncomment to enable cw RBN skimmer
+#Replace your callsign to sk0mmr file
+#set/rbn sk0mmr
+#connect sk0mmr
+
+#Uncomment to enable digi RBN skimmer
+# Replace your callsign to sk0mmr file
+#set/rbn sk1mmr
+#connect sk1mmr

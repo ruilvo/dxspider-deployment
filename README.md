@@ -7,14 +7,26 @@ This project focuses on easy DX Spider deployment in virtualised/cloud
 environments and as such its focus is primarily supporting telnet nodes running
 on TCP networks.
 
+This repo adds the connection to a mariadb container and a simple webinterface.
+In addition the DXspider container has a ttyd based webconsole to login for sysop activities.
+
+
+
 ## Running in docker-compose
 
-Rename the file `prod.sample.env` to `prod.env`, edit it at your will, and then
-just run the following command:
+Rename the file `sample.env` to `.env` and edit it so match your parameters and then
+just run the following command to test the configuration:
+
+```sh
+docker compose config
+```
+
+To download, build and run the containers:
 
 ```sh
 docker compose up -d --build
 ```
+Use secure passwords including upper and lowercase and numbers.
 
 Note: you might want to change some extra settings inside the
 `docker-compose.yml` file itself.
@@ -37,7 +49,7 @@ You can now telnet to your cluster node and use it list like any other telnet
 node:
 
 ```txt
-$ telnet localhost 1234
+$ telnet localhost 7300
 Trying ::1...
 Connected to localhost.
 Escape character is '^]'.
@@ -65,3 +77,5 @@ In order to get a sysop shell in your running Docker container:
 ```sh
 docker compose exec cluster sh
 ```
+Or use the ttyd Webconsole on localhost:8080
+Login with sysop username and password.

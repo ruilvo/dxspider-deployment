@@ -12,6 +12,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+# Changes by Joe Fellner OE5JFE <oe5jfe <at> oevsv <dot> at>
+# DXSpider with Adminwebconsole , MariaDB, Webviewer of latest spots
+
 version: "3.9"
 
 services:
@@ -20,18 +23,109 @@ services:
       context: ./dxspider
       dockerfile: Dockerfile
       args:
-        # SPIDER_VERSION can be "mojo" or "master"
-        - SPIDER_VERSION=mojo
+        - SPIDER_VERSION=${CLUSTER_DXSPIDER_BRANCH}
+        - SPIDER_USERNAME=${CLUSTER_DB_USER}
+    environment:
+      - SPIDER_INSTALL_DIR=/spider #don't change that
+      - CLUSTER_CALLSIGN=${CLUSTER_CALLSIGN}
+      - CLUSTER_LOCATOR=${CLUSTER_LOCATOR}
+      - CLUSTER_QTH=${CLUSTER_QTH}
+      - CLUSTER_SYSOP_NAME=${CLUSTER_SYSOP_NAME}
+      - CLUSTER_SYSOP_CALLSIGN=${CLUSTER_SYSOP_CALLSIGN}
+      - CLUSTER_SYSOP_EMAIL=${CLUSTER_SYSOP_EMAIL}
+      - CLUSTER_SYSOP_BBS_ADDRESS=${CLUSTER_SYSOP_BBS_ADDRESS}
+      - CLUSTER_LATITUDE=${CLUSTER_LATITUDE}
+      - CLUSTER_LONGITUDE=${CLUSTER_LONGITUDE}
+      - SPIDER_USERNAME=${CLUSTER_DB_USER}
+      - CLUSTER_DSN=dbi:mysql:${CLUSTER_DB_NAME}:${CLUSTER_DB_HOSTNAME}:${CLUSTER_DB_PORT}
+      - CLUSTER_DBUSER=${CLUSTER_DB_USER}
+      - CLUSTER_DBPASS=${CLUSTER_DB_PASS}
+      - CLUSTER_PORT=${CLUSTER_PORT}
+      - CLUSTER_SYSOP_PORT=${CLUSTER_SYSOP_PORT}
+    healthcheck:
+      test: ["CMD", "nc", "-z", "-v", "localhost", "${CLUSTER_PORT}"]
+      interval: 10s
+      start_period: 5s
+      retries: 3
+      timeout: 60s
+    depends_on:
+      cluster-db:
+        condition: service_healthy
+        restart: true
     volumes:
-      - cluster_local_cmd_data:/spider/local_cmd
-      - cluster_connect_data:/spider/connect
+      - ./dxspider/startup:/spider/scripts/startup:ro
+      - ./dxspider/crontab:/spider/local_cmd/crontab:ro
+      - ./dxspider/connect:/spider/connect:ro
       - cluster_scripts_data:/spider/scripts
       - cluster_local_data_data:/spider/local_data # For the Mojo branch
-    env_file:
-      - prod.env
     ports:
-      - 7300:7300
-    restart: always
+      - ${CLUSTER_PORT}:${CLUSTER_PORT} # DXSpider Cluster
+      - ${CLUSTER_SYSOP_PORT}:${CLUSTER_SYSOP_PORT} # Sysop Console via ttyd
+    expose:
+      - ${CLUSTER_PORT} # DXSpider Cluster
+      - ${CLUSTER_SYSOP_PORT} # Sysop Console via ttyd
+    #restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    networks:
+      - dxspidernet
+
+  cluster-db:
+    image: mariadb
+    #restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: ${CLUSTER_DB_ROOT_PWD}
+      MARIADB_DATABASE: ${CLUSTER_DB_NAME}
+      MARIADB_USER: ${CLUSTER_DB_USER}
+      MARIADB_PASSWORD: ${CLUSTER_DB_PASS}
+      MARIADB_MYSQL_LOCALHOST_USER: true # Required for healthcheck
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized"]
+      interval: 15s
+      start_period: 15s
+      retries: 3
+      timeout: 60s
+    volumes:
+      - cluster_db:/var/lib/mysql
+      - ./cluster-db/init:/docker-entrypoint-initdb.d
+    ports:
+      - ${CLUSTER_DB_PORT}:3306
+    networks:
+      dxspidernet:
+        aliases:
+          - ${CLUSTER_DB_HOSTNAME}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+
+  cluster-web:
+    build:
+      context: ./cluster-web
+      dockerfile: Dockerfile
+    environment:
+      - CLUSTERWEB_DB_CONTAINERHOSTNAME=${CLUSTER_DB_HOSTNAME}
+      - CLUSTERWEB_DB_PORT=${CLUSTER_DB_PORT}
+      - CLUSTERWEB_USER=${CLUSTER_DB_USER}
+      - CLUSTERWEB_PASSWORD=${CLUSTER_DB_PASS}
+      - CLUSTERWEB_DATABASE=${CLUSTER_DB_NAME}
+      - CLUSTER_CALLSIGN=${CLUSTER_CALLSIGN}
+    depends_on:
+      cluster-db:
+        condition: service_healthy
+    volumes:
+      - ./cluster-web/init:/docker-entrypoint-init.d/
+    ports:
+      - ${CLUSTER_WEBSERVER_EXPOSEDPORT}:8080 # NGINX internal port 8080
+    expose:
+      - ${CLUSTER_WEBSERVER_EXPOSEDPORT}
+    #restart: always
+    networks:
+      - dxspidernet
     logging:
       driver: "json-file"
       options:
@@ -39,7 +133,9 @@ services:
         max-file: "10"
 
 volumes:
-  cluster_local_cmd_data:
-  cluster_connect_data:
   cluster_scripts_data:
   cluster_local_data_data:
+  cluster_db:
+
+networks:
+  dxspidernet:

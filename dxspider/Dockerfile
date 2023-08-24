@@ -12,41 +12,97 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+# Modififed by OE5JFE, Joe
+# Refactoring build, keep git, add ttyd for sysop webconsole 
+# Add copy of connect scripts, cronjobs and motd files 
+
+
 FROM alpine:latest
+
 
 ARG SPIDER_GIT_REPOSITORY=git://scm.dxcluster.org/scm/spider
 # SPIDER_VERSION can be "mojo" or "master"
 ARG SPIDER_VERSION=master
 
-ENV SPIDER_INSTALL_DIR=${SPIDER_INSTALL_DIR:-/spider}
-ENV SPIDER_USERNAME=${SPIDER_USERNAME:-sysop}
-ENV SPIDER_UID=${SPIDER_UID:-1000}
+ARG SPIDER_INSTALL_DIR=${SPIDER_INSTALL_DIR:-/spider}
+ARG SPIDER_USERNAME=${SPIDER_USERNAME:-sysop}
+ARG SPIDER_UID=${SPIDER_UID:-1000}
 
-COPY entrypoint.sh /entrypoint.sh
 
-RUN apk update
-RUN apk add gcc git make musl-dev \
-    ncurses-libs ncurses-dev \
-    nano
-RUN apk add perl-db_file perl-dev perl-digest-sha1 perl-io-socket-ssl
-RUN apk add perl-net-telnet perl-timedate perl-yaml-libyaml
-RUN apk add perl-test-simple perl-app-cpanminus
-RUN apk add perl-curses perl-mojolicious
-RUN apk add perl-math-round perl-json
-RUN cpanm --no-wget Data::Structure::Util
-RUN adduser -D -u ${SPIDER_UID} -h ${SPIDER_INSTALL_DIR} ${SPIDER_USERNAME}
-RUN git config --global --add safe.directory ${SPIDER_INSTALL_DIR}
-RUN git clone -b ${SPIDER_VERSION} ${SPIDER_GIT_REPOSITORY} ${SPIDER_INSTALL_DIR}
-RUN mkdir -p ${SPIDER_INSTALL_DIR}/local ${SPIDER_INSTALL_DIR}/local_cmd \
-    ${SPIDER_INSTALL_DIR}/local_data
-RUN find ${SPIDER_INSTALL_DIR}/. -type d -exec chmod 2775 {} \; && \
-    find ${SPIDER_INSTALL_DIR}/. -type f -name '*.pl' -exec chmod 775 {} \;
-RUN (cd ${SPIDER_INSTALL_DIR}/src && make)
+RUN apk update \
+    && apk add \
+    gcc \
+    git \ 
+    make \
+    musl-dev \
+    ncurses-dev \
+    perl-app-cpanminus \
+    perl-dev \
+    nano \
+    netcat-openbsd \
+    perl-db_file \
+    perl-dev \
+    perl-digest-sha1 \
+    perl-io-socket-ssl \
+    perl-net-telnet \ 
+    perl-timedate \
+    perl-yaml-libyaml \
+    perl-test-simple \ 
+    perl-curses \ 
+    perl-app-cpanminus \
+    perl-mojolicious \
+    perl-math-round \
+    perl-json \
+    mysql-client \
+    mysql-dev \
+    perl-dbd-mysql \ 
+    perl-dbi musl \ 
+    perl-net-cidr-lite \
+    make \
+    musl-dev \
+    ncurses-dev \
+    mysql-dev \
+    gcc \
+    ttyd \
+    && cpanm --no-wget Data::Structure::Util \
+    && adduser -D -u ${SPIDER_UID} -h ${SPIDER_INSTALL_DIR} ${SPIDER_USERNAME} \
+    && git config --global --add safe.directory ${SPIDER_INSTALL_DIR} \
+    && git clone -b ${SPIDER_VERSION} ${SPIDER_GIT_REPOSITORY} ${SPIDER_INSTALL_DIR} \
+    && mkdir -p ${SPIDER_INSTALL_DIR}/local ${SPIDER_INSTALL_DIR}/local_cmd ${SPIDER_INSTALL_DIR}/local_data \
+    && find ${SPIDER_INSTALL_DIR}/. -type d -exec chmod 2775 {} \; \ 
+    && find ${SPIDER_INSTALL_DIR}/. -type f -name '*.pl' -exec chmod 775 {} \; \
+    && (cd ${SPIDER_INSTALL_DIR}/src && make) \
+    && apk del --purge \
+    gcc \
+    make \
+    musl-dev \
+    ncurses-dev \
+    perl-app-cpanminus \
+    perl-dev \
+    && rm -rf /var/cache/apk/*
+
+
+# Copy connection node files - cleanup
+RUN rm -rf /spider/connect/*
+
+# Copy node connection files over
+COPY ./connect /spider/connect/
+
+# Copy Message of the day file motd
+COPY motd ${SPIDER_INSTALL_DIR}/data
+
+# Copy Startup script
+COPY startup ${SPIDER_INSTALL_DIR}/scripts
+
+# Copy crontab
+COPY crontab ${SPIDER_INSTALL_DIR}/local_cmd
+
+# Permissions for spider 
 RUN chown -R ${SPIDER_USERNAME}:${SPIDER_USERNAME} ${SPIDER_INSTALL_DIR}/.
-RUN apk del --purge gcc git make \
-    musl-dev ncurses-dev perl-app-cpanminus perl-dev
-RUN rm -rf /var/cache/apk/*
 
 USER ${SPIDER_UID}
-ENTRYPOINT ["/bin/sh"]
-CMD ["/entrypoint.sh"]
+
+# COPY entrypoint.sh file
+COPY entrypoint.sh /entrypoint.sh
+
+ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
