@@ -64,7 +64,7 @@ services:
     expose:
       - ${CLUSTER_PORT} # DXSpider Cluster
       - ${CLUSTER_SYSOP_PORT} # Sysop Console via ttyd
-    #restart: always
+    #restart: unless-stopped
     logging:
       driver: "json-file"
       options:
@@ -75,7 +75,7 @@ services:
 
   cluster-db:
     image: mariadb
-    #restart: always
+    #restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: ${CLUSTER_DB_ROOT_PWD}
       MARIADB_DATABASE: ${CLUSTER_DB_NAME}
@@ -123,7 +123,7 @@ services:
       - ${CLUSTER_WEBSERVER_EXPOSEDPORT}:8080 # NGINX internal port 8080
     expose:
       - ${CLUSTER_WEBSERVER_EXPOSEDPORT}
-    #restart: always
+    #restart: unless-stopped
     networks:
       - dxspidernet
     logging:
