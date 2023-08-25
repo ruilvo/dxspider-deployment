@@ -14,36 +14,26 @@ In addition the DXspider container has a ttyd based webconsole to login for syso
 
 ## Running in docker-compose
 
-Rename the file `sample.env` to `.env` and edit it so match your parameters and then
+All the configuration is in the `.env` file. Edit it so match your parameters and setting and then
 just run the following command to test the configuration:
 
 ```sh
 docker compose config
 ```
+This should show no errors. Don't miss to set safe passwords for the sysop.
 
 To download, build and run the containers:
 
 ```sh
 docker compose up -d --build
 ```
-Use secure passwords including upper and lowercase and numbers.
 
-Note: you might want to change some extra settings inside the
+
+Note: you might want to change some extra settings inside the `.env` or
 `docker-compose.yml` file itself.
 
-Please ensure that the `CLUSTER_PORT` value equals to that of the
-published port in the `docker-compose.yml` file.
-
-If your node started up successfully, at the end of the startup you should
-get an output similar to:
-
-```txt
-reading database descriptors ...
-doing local initialisation ...
-orft we jolly well go ...
-queue msg (0)
-queue msg (0)
-```
+The `/dxspider/motd` (Message of the day) file and `/dxspider/connect` files need to be manually updated.
+Finding partner nodes works via die DXCluster forum or contact other sysops that run DXSpider nodes.
 
 You can now telnet to your cluster node and use it list like any other telnet
 node:
@@ -64,6 +54,12 @@ MY1CALL de MY1CALL-2  4-Oct-2018 0918Z dxspider >
 If you want to allow external connections to your node, you will need to allow
 this traffic on your firewall.
 
+To show logs from all containers:
+
+```show logs
+docker compose logs
+```
+
 To put down the server, run:
 
 ```sh
@@ -75,7 +71,8 @@ docker compose down
 In order to get a sysop shell in your running Docker container:
 
 ```sh
-docker compose exec cluster sh
+docker compose exec dxspider-deployment-cluster-1 sh
 ```
-Or use the ttyd Webconsole on localhost:8080
+
+You can use the ttyd Webconsole on `localhost:8080` to directy access the cluster sysop console.
 Login with sysop username and password.
