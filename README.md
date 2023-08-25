@@ -71,7 +71,7 @@ docker compose down
 In order to get a sysop shell in your running Docker container:
 
 ```sh
-docker compose exec dxspider-deployment-cluster-1 sh
+docker compose exec cluster sh
 ```
 
 You can use the ttyd Webconsole on `localhost:8080` to directy access the cluster sysop console.
