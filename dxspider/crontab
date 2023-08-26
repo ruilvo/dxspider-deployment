@@ -29,7 +29,7 @@
 # AutoUpdate CTY.DAT (At 03:00 on Sunday, Tuesday, and Friday)
 0 3 * * 0,2,5 spawn("cd /spider/local_data | wget -q https://www.country-files.com/cty/cty.dat -O cty.dat &")
 0 3 * * 0,2,5 spawn("cd /spider/local_data | wget -q https://www.country-files.com/cty/wpxloc.dat -O wpxloc.dat &")
-0 3 * * 0,2,5 spawn("cd /spider/local_data | wget -q https://www.country-files.com/cty/wpxloc.raw -O wploc.raw &")
+0 3 * * 0,2,5 spawn("cd /spider/local_data | wget -q https://www.country-files.com/cty/wpxloc.raw -O wpxloc.raw &")
 2 3 * * 0,2,5 spawn("cd /spider/local_data | /spider/perl/create_prefix.pl")
 3 3 * * 0,2,5 run_cmd("load/prefix")
 
