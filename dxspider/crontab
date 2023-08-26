@@ -17,19 +17,19 @@
 
 
 # AutoUpdate USDB (At 02:00 on Monday, Wednesday, and Friday)
-0 2 * * 1,3,5 spawn("cd /tmp | wget -qN ftp://ftp.w1nr.net/usdbraw.gz & /spider/perl/create_usdb.pl usdbraw.gz")
+0 2 * * 1,3,5 spawn("cd /tmp | wget -q ftp://ftp.w1nr.net/usdbraw.gz & /spider/perl/create_usdb.pl usdbraw.gz")
 5 2 * * 1,3,5 run_cmd("load/usdb")
 10 2 * * 1,3,5 spawn("rm /tmp/usdbraw.gz")
 
 # AutoUpdate Keps (At 02:00 on Tuesday, Thursday, and Saturday)
-0 2 * * 2,4,6 spawn("cd /tmp | wget -qN http://www.amsat.org/amsat/ftp/keps/current/nasabare.txt & /spider/perl/convkeps.pl -p nasabare.txt &")
+0 2 * * 2,4,6 spawn("cd /tmp | wget -q http://www.amsat.org/amsat/ftp/keps/current/nasabare.txt & /spider/perl/convkeps.pl -p nasabare.txt &")
 5 2 * * 2,4,6 run_cmd("load/keps")
 10 2 * * 2,4,6 spawn("rm /tmp/nasabare.txt")
 
 # AutoUpdate CTY.DAT (At 03:00 on Sunday, Tuesday, and Friday)
-0 3 * * 0,2,5 spawn("cd /spider/local_data | wget -qN https://www.country-files.com/cty/cty.dat &")
-0 3 * * 0,2,5 spawn("cd /spider/local_data | wget -qN https://www.country-files.com/cty/wpxloc.dat &")
-0 3 * * 0,2,5 spawn("cd /spider/local_data | wget -qN https://www.country-files.com/cty/wpxloc.raw &")
+0 3 * * 0,2,5 spawn("cd /spider/local_data | wget -q https://www.country-files.com/cty/cty.dat -O cty.dat &")
+0 3 * * 0,2,5 spawn("cd /spider/local_data | wget -q https://www.country-files.com/cty/wpxloc.dat -O wpxloc.dat &")
+0 3 * * 0,2,5 spawn("cd /spider/local_data | wget -q https://www.country-files.com/cty/wpxloc.raw -O wploc.raw &")
 2 3 * * 0,2,5 spawn("cd /spider/local_data | /spider/perl/create_prefix.pl")
 3 3 * * 0,2,5 run_cmd("load/prefix")
 
@@ -41,7 +41,7 @@
 5 0 * 1-12 * spawn(q[find /spider/local_data/wwv -type f -mtime +1 -exec rm -f {} \;])
 
 # Blacklist. TOR & Others (At minute 30)
-30 * * * * spawn('cd /spider/local_data; wget -qN http://www.dxspider.net/download/badip.torexit')
-30 * * * * spawn('cd /spider/local_data; wget -qN http://www.dxspider.net/download/badip.torrelay')
-30 * * * * spawn('cd /spider/local_data; wget -qN http://www.dxspider.net/download/badip.global')
+30 * * * * spawn('cd /spider/local_data; wget -q http://www.dxspider.net/download/badip.torexit -O badip.torexit')
+30 * * * * spawn('cd /spider/local_data; wget -q http://www.dxspider.net/download/badip.torrelay -O badip.torrelay')
+30 * * * * spawn('cd /spider/local_data; wget -q http://www.dxspider.net/download/badip.global -O badip.global')
 31 * * * * run_cmd('load/badip')
