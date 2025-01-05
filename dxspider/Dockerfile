@@ -12,7 +12,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-FROM alpine:latest
+# The mojo version doesn't build on GCC 14
+FROM alpine:3.20
 
 ARG SPIDER_GIT_REPOSITORY=git://scm.dxcluster.org/scm/spider
 # SPIDER_VERSION can be "mojo" or "master"
